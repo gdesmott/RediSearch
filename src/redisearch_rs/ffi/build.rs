@@ -49,7 +49,7 @@ fn main() {
     };
 
     let headers = {
-        let buffer_h = root.join("src").join("buffer.h");
+        let buffer_h = root.join("src").join("buffer/buffer.h");
         let redisearch_h = root.join("src").join("redisearch.h");
         let result_processor_h = root.join("src").join("result_processor.h");
         [buffer_h, redisearch_h, result_processor_h]

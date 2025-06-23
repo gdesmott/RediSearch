@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "buffer.h"
+#include "buffer/buffer.h"
 #include "rmalloc.h"
 #include "qint.h"
 

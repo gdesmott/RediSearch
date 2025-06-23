@@ -14,7 +14,7 @@
 #include "rmutil/strings.h"
 #include "rmalloc.h"
 #include "sortable.h"
-#include "buffer.h"
+#include "buffer/buffer.h"
 
 /* Create a sorting vector of a given length for a document */
 RSSortingVector *NewSortingVector(size_t len) {

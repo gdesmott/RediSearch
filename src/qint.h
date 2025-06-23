@@ -11,7 +11,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include "buffer.h"
+#include "buffer/buffer.h"
 
 #ifndef QINT_API
 #define QINT_API

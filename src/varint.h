@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <stdint.h>
-#include "buffer.h"
+#include "buffer/buffer.h"
 #include "redisearch.h"
 
 #ifdef __cplusplus
