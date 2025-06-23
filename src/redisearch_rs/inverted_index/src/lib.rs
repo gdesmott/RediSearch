@@ -159,6 +159,26 @@ impl RSIndexResult {
             weight: 0.0,
         }
     }
+
+    /// Create a new freqs only index result with the given frequency.
+    pub fn freqs_only(freq: u32) -> Self {
+        Self {
+            doc_id: 0,
+            dmd: std::ptr::null(),
+            field_mask: 0,
+            freq,
+            offsets_sz: 0,
+            // FIXME: should data be optional?
+            data: RSIndexResultData {
+                num: ManuallyDrop::new(RSNumericRecord(1.0)),
+            },
+            // FIXME: is this the right type?
+            result_type: RSResultType::Virtual,
+            is_copy: false,
+            metrics: std::ptr::null_mut(),
+            weight: 0.0,
+        }
+    }
 }
 
 impl Debug for RSIndexResult {
