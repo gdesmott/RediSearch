@@ -16,6 +16,7 @@ use std::{
 
 use enumflags2::{BitFlags, bitflags};
 pub use ffi::{RSDocumentMetadata, RSQueryTerm, RSYieldableMetric, t_docId, t_fieldMask};
+use qint::{qint_decode, qint_encode};
 
 /// A delta is the difference between document IDs. It is mostly used to save space in the index
 /// because document IDs are usually sequential and the difference between them are small. With the
@@ -321,6 +322,78 @@ pub trait Decoder {
                 Some(DecoderResult::Record(_)) | Some(DecoderResult::FilteredOut) => continue,
                 None => return Ok(None),
             }
+        }
+    }
+}
+
+/// Encode and decode only the delta ID and frequencies of a record, without any other data.
+/// The delta and frequency are encoded using [qint encoding](qint).
+pub struct FreqsOnly;
+
+impl Encoder for FreqsOnly {
+    fn encode<W: Write + Seek>(
+        mut writer: W,
+        delta: Delta,
+        record: &RSIndexResult,
+    ) -> std::io::Result<usize> {
+        let bytes_written = qint_encode(&mut writer, [delta.0 as u32, record.freq])?;
+        Ok(bytes_written)
+    }
+}
+
+impl Decoder for FreqsOnly {
+    fn decode<R: Read>(
+        &self,
+        reader: &mut R,
+        base: t_docId,
+    ) -> std::io::Result<Option<DecoderResult>> {
+        let (decoded_values, _bytes_consumed) = qint_decode::<2, _>(reader).unwrap();
+        let [delta, freq] = decoded_values;
+
+        let record = RSIndexResult::freqs_only(base + delta as u64, freq);
+        Ok(Some(DecoderResult::Record(record)))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+
+    #[test]
+    fn test_encode_freqs_only() {
+        // Test cases for the frequencies only encoder and decoder.
+        let tests = [
+            (0, 0, vec![0, 0, 0]),
+            (0, 1, vec![0, 1, 0]),
+            (1, 0, vec![0, 0, 1]),
+            (1, 1, vec![0, 1, 1]),
+            (100, 0, vec![0, 0, 100]),
+            (100, 1, vec![0, 1, 100]),
+        ];
+        let doc_id = 1_000;
+
+        for (freq, delta, expected_encoding) in tests {
+            let mut buf = Cursor::new(Vec::new());
+            let record = RSIndexResult::freqs_only(doc_id, freq);
+
+            let bytes_written = FreqsOnly::encode(&mut buf, Delta(delta), &record)
+                .expect("to encode freqs only record");
+
+            assert_eq!(bytes_written, 3);
+            assert_eq!(buf.get_ref(), &expected_encoding);
+
+            buf.set_position(0);
+            let prev_doc_id = doc_id - (delta as u64);
+            let DecoderResult::Record(record_decoded) = FreqsOnly
+                .decode(&mut buf, prev_doc_id)
+                .expect("to decode freqs only record")
+                .expect("to read a record from the buffer")
+            else {
+                panic!("Record was filtered out incorrectly")
+            };
+
+            assert_eq!(record_decoded, record);
         }
     }
 }

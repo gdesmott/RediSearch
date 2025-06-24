@@ -8,6 +8,7 @@ publish.workspace = true
 [dependencies]
 enumflags2.workspace = true
 ffi.workspace = true
+qint.workspace = true
 
 [lints]
 workspace = true
